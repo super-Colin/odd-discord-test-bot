@@ -57,16 +57,44 @@ client.on("message", async message => {
     // makes the bot say something and delete the message. As an example, it's open to anyone to use. 
     // To get the "message" itself we join the `args` back into a string with spaces: 
     const sayMessage = args.join(" ");
-    // Then we delete the command message (sneaky, right?). The catch just ignores the error with a cute smiley thing.
-    message.delete().catch(O_o=>{}); 
+
     // And we get the bot to say the thing: 
     message.channel.send(sayMessage);
   }
 
+  if(command==='test'){
+    // let test = [22, 23, 24, 25];
+    let testString = '2+3+4+5';
+    let digitArray = [... testString.matchAll(/\d+/)];
+
+    console.log(digitArray);
+    message.channel.send(digitArray);
+  }
+
   if(command==="calc"){
-    const inputMessage = args.join(" ");
-    const equationCheck = /^([-+/*]\d+(\.\d+)?)*/;
+    // ?/calc 2 + 2
+    // smash all input characters after (cmd) into a string with no whitespace
+    const inputEquation = args.join("").toString(); // 2 + 2 => 2+2
+    // console.log('inputEquation: ' + inputEquation + ', type is:  ' + (typeof inputEquation));
+    message.channel.send('inputEquation: ' + inputEquation + ', type is:  ' + (typeof inputEquation))
+
+    // const digitRegex = /\d+/; // one or more digits per match
+    // const operatorRegex = /[+-/*]/; // one math operator per match
+
+    // let digitArray = Array.from(inputEquation.matchAll(/\d+/));
+    // let operatorArray = Array.from(inputEquation.matchAll(/[+-/*]/));
+    let digitArray = [... inputEquation.matchAll(/\d+/)];
+    let operatorArray = [... inputEquation.matchAll(/[+-/*]/)];
+    let outputEquation = digitArray[0] + operatorArray[0] + digitArray[1];
     
+    // console.log('and outputEquation: ' + outputEquation + ', type is: ' + (typeof outputEquation));
+    message.channel.send('outputEquation: ' + outputEquation + ', type is: ' + (typeof outputEquation));
+
+    message.channel.send(digitArray);
+    // let result = eval(outputEquation);
+    // console.log(digitArray);
+    console.log(operatorArray);
+    // message.channel.send('My limited computer knowledge tells me that equals: ' + result);
   }
   
   if(command === "kick") {
