@@ -72,30 +72,42 @@ client.on("message", async message => {
   }
 
   if(command==="calc"){
-    // ?/calc 2 + 2
+
     // smash all input characters after (cmd) into a string with no whitespace
     const inputEquation = args.join("").toString(); // 2 + 2 => 2+2
-    // console.log('inputEquation: ' + inputEquation + ', type is:  ' + (typeof inputEquation));
-    message.channel.send('inputEquation: ' + inputEquation + ', type is:  ' + (typeof inputEquation))
-
-    // const digitRegex = /\d+/; // one or more digits per match
-    // const operatorRegex = /[+-/*]/; // one math operator per match
-
-    // let digitArray = Array.from(inputEquation.matchAll(/\d+/));
-    // let operatorArray = Array.from(inputEquation.matchAll(/[+-/*]/));
-    let digitArray = [... inputEquation.matchAll(/\d+/)];
-    let operatorArray = [... inputEquation.matchAll(/[+-/*]/)];
-    let outputEquation = digitArray[0] + operatorArray[0] + digitArray[1];
     
-    // console.log('and outputEquation: ' + outputEquation + ', type is: ' + (typeof outputEquation));
-    message.channel.send('outputEquation: ' + outputEquation + ', type is: ' + (typeof outputEquation));
+    // digitRegex = /\d+/; // one or more digits per match
+    // operatorRegex = /[+-/*]/; // one math operator per match
+    const digitArray = [... inputEquation.matchAll(/\d+/g)];
+    const operatorArray = [... inputEquation.matchAll(/[+-/*]/g)];
 
-    message.channel.send(digitArray);
-    // let result = eval(outputEquation);
-    // console.log(digitArray);
-    console.log(operatorArray);
-    // message.channel.send('My limited computer knowledge tells me that equals: ' + result);
+    // define our equation a formated string
+    let outputEquation = digitArray[0] + operatorArray[0] + digitArray[1];
+
+    let i =1;
+    while(operatorArray[i]){
+      if( operatorArray[i] && digitArray[(i+1)]){
+      outputEquation = outputEquation + operatorArray[i] + digitArray[i+1];
+      }
+      i++;
+    }
+    // pre-defining as an empty string just for extra safety
+    let result =0;
+
+    // the eval() command is extremely dangerous!!!
+    result = eval(outputEquation);
+    // the eval() command is extremely dangerous!!!
+    message.channel.send('My limited knowledge tells me that equals: ' + result);
+
+    // the eval() command is extremely dangerous!!!
+    if(typeof result != Number){return null;}
+    // the eval() command is extremely dangerous!!!
   }
+
+
+
+
+  // ----------------------------------------------
   
   if(command === "kick") {
       return;
@@ -152,11 +164,12 @@ client.on("message", async message => {
     // This command removes all messages from all users in the channel, up to 100.
     
     // get the delete count, as an actual number.
+    // [in base 10, as opposed to binary or hexadecimal etc.]
     const deleteCount = parseInt(args[0], 10);
     
     // Ooooh nice, combined conditions. <3
-    if(!deleteCount || deleteCount < 2 || deleteCount > 100)
-      return message.reply("Please provide a number between 2 and 100 for the number of messages to delete");
+    if(!deleteCount || deleteCount < 2 || deleteCount > 5)
+      return message.reply("Please provide a number between 2 and 5 for the number of messages to delete");
     
     // So we get our messages, and delete them. Simple enough, right?
     const fetched = await message.channel.fetchMessages({limit: deleteCount});
