@@ -1,0 +1,60 @@
+
+
+
+
+Reminders / Anniverseries Schema:
+____________________
+--------------------
+?/Birthday [who], ?[dateToRemind]
+--
+"reminder": true,
+"eventType" : "Birthday",
+"remindWho" : "all",
+"dateToRemind" : "10/10/2020",
+"message" : "Happy Birthday!"
+--------------------
+
+
+
+____________________
+--------------------
+?/Remindme [when], [message]
+--
+"reminder": true,
+"eventType" : "Remindme",
+"message": "remember to ...."
+"private" : true
+"remindWho" : "person#112243",
+--------------------
+
+
+____________________
+--------------------
+?/Reminder [dateToRemind], [howOften], [message], [private?]
+--
+"eventType" : "Reminder",
+"remindWho" : "all",
+"dateToRemind" : "10/10/2020" / [Today]
+"howOften": "1 week"
+"message": "remember to ...."
+"private" : false
+--------------------
+
+
+type,
+who,
+Date,
+How_often,
+
+
+
+?Time?,
+
+
+
+
+
+
+
+
+

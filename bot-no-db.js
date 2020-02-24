@@ -1,18 +1,14 @@
 // gist.github.com/eslachance/3349734a98d30011bb202f47342601d3#file-index-js
 
 // Run dotenv for sepration between code and config
+// ... and so we can deploy it on Heroku
 require('dotenv').config();
+// require MongnDB to use a database
 
-// // require MongnDB to use a database
-// const mongodb = require('mongodb').MongoClient;
-// // define our Database
-// const db = client.db('DiscordBot');
-// // and the url to the DB to connect to
-// const mongoUrl = 'mongodb://localhost:27017';
+
 
 // Load up the discord.js library
 const Discord = require('discord.js');
-
 
 // This is your client. Some people call it `bot`, some people call it `self`, 
 // this is what we're refering to. Your client.
@@ -101,15 +97,6 @@ client.on("message", async message => {
     // the eval() command is extremely dangerous!!!
     if(typeof result != Number){return null;}
     // the eval() command is extremely dangerous!!!
-  }
-
-
-  if(command === "remindme"){
-    const when = args[0];
-    const msg = args.slice(1).join(' ');
-
-    message.reply('I will remind you in ' + when + ' minutes');
-    message.reply(msg);
   }
 
 
