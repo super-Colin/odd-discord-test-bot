@@ -6,26 +6,37 @@ const reminderModel = require('./models/reminder.model');
 
 const DiscordClient = new Discord.Client();
 
-const seedReminder = {
-    "key": "value",
-    "num": 123,
-    "boolean": true
-}
 
+
+ const seedReminder = {
+     name: 'Bob Alice',
+     email: 'test@dev.null',
+     bonusSetting: true
+ };
+
+
+// Connect to MongoDB and put server instantiation code inside
+// because we start the connection first
 mongoUtil.connectDB(async (err) => {
     if (err) throw err;
     // Load db & collections
-    const db = await mongoUtil.getDB();
+    const db = mongoUtil.getDB();
     const reminders = db.collection('reminders');
 
     try {
+        // Run some sample operations
+        // and pass reminders collection into models
         const newReminder = await Reminders.createReminder(reminders, seedReminder);
         const listReminders = await Reminders.getReminders(reminders);
         // const findReminder = await Reminders.findReminderById(reminders, newReminder._id);
 
-
+        console.log('CREATE USER');
+        console.log(newReminder);
+        console.log('GET ALL USERS');
+        console.log(listReminders);
+        // console.log('FIND USER');
+        // console.log(findReminder);
     } catch (err) {
-        console.log('connect error');
         throw err;
     }
 

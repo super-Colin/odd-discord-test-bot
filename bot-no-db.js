@@ -63,6 +63,23 @@ client.on("message", async message => {
     message.channel.send(sayMessage);
   }
 
+
+  if(command === "timer") {
+    // makes the bot say something and delete the message. As an example, it's open to anyone to use. 
+    // To get the "message" itself we join the `args` back into a string with spaces: 
+    // And we get the bot to say the thing: 
+
+    const sayMessage = args.slice(1).join(" ");
+    let waitTimer = args[0] * 60000;
+    // if(args[0])
+    message.reply('I\'ll tell you: "' + sayMessage + '"; in ' + args[0] + ' minute(s).');
+
+    await new Promise(resolve => setTimeout(resolve, waitTimer));
+    message.reply(sayMessage);
+  }
+
+
+
   if(command==="calc"){
     // smash all input characters after (cmd) into a string with no whitespace
     const inputEquation = args.join("").toString(); // 2 + 2 => 2+2
