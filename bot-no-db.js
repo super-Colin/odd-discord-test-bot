@@ -47,7 +47,7 @@ client.on("message", async message => {
   // args = ["Is", "this", "the", "real", "life?"]
   const args = message.content.slice(process.env.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
-  
+
   if(command === "ping") {
     // Calculates ping between sending a message and editing it, giving a nice round-trip latency.
     // The second ping is an average latency between the bot and the websocket server (one-way, not round-trip)
@@ -58,7 +58,11 @@ client.on("message", async message => {
   if(command === "say") {
     // makes the bot say something and delete the message. As an example, it's open to anyone to use. 
     // To get the "message" itself we join the `args` back into a string with spaces: 
-    const sayMessage = args.join(" ");
+    if(args){
+      const sayMessage = args.join(" ");
+    }else{
+      const sayMessage = "I'll say whatever you tell me to ";
+    }
     // And we get the bot to say the thing: 
     message.channel.send(sayMessage);
   }
@@ -76,6 +80,7 @@ client.on("message", async message => {
 
     await new Promise(resolve => setTimeout(resolve, waitTimer));
     message.reply(sayMessage);
+    message.reply('Also, you should know, SuperColin is a pretty cool dude :thumbsup:');
   }
 
 
@@ -103,10 +108,10 @@ client.on("message", async message => {
       }
       i++;
     }
-    // pre-defining as an empty string just for extra safety
+    // pre-defining as a number just for extra safety
     let result =0;
 
-    // the eval() command is extremely dangerous!!!
+    // the eval() command is extremely dangerous but out input has to be a number by now!!!
     result = eval(outputEquation);
     // the eval() command is extremely dangerous!!!
     message.channel.send('My limited knowledge tells me that equals: ' + result);
@@ -117,13 +122,63 @@ client.on("message", async message => {
   }
 
 
+  if (command === "cigsmokingcosts") {
+    // how many cigarettes do you smoke a day:
+    const cigsSmokedDaily = parseFloat(args[0]);
+
+    // how much does a pack cost?
+    const costOfAPack = parseFloat(args[1]);
+
+    // how much do you spend on cigarettes a day?
+    const moneySpentDaily = cigsSmokedDaily / 20 * costOfAPack;
+
+    // how much of my life am I killing by smoking? (In minutes)
+    const lifeLostPerCig = 7;
+    const lifeLostPerDay = lifeLostPerCig * cigsSmokedDaily;
+
+    let sayMessage = `
+    Smoking ${+(cigsSmokedDaily).toFixed(2)} cigs per day at $${+(costOfAPack).toFixed(2)} a pack is costing you:
+    $${+(moneySpentDaily).toFixed(2)} every single day, $${+(moneySpentDaily * 7).toFixed(2)} per week and ~$${+(moneySpentDaily * 29).toFixed(2)} per month. \n
+    And if one cig takes 7 minutes off your life, it's also costing you:
+    ${+(lifeLostPerDay).toFixed(2)} minutes of your life everyday, ${+((lifeLostPerDay * 7) / 60).toFixed(2)} hours every week and ${+(((lifeLostPerDay * 29) / 60) / 24).toFixed(2)} days of your life every month
+    `;
+
+    message.channel.send(sayMessage);
+  }
 
 
 
+  
+  if(command === 'help'){
+    console.log(args)
+    switch(args[0]){
 
+      case 'ping':
+        message.channel.send('ping the server to find out your latency \n syntax: /ping [none]');
+        break;
 
+      case 'say':
+        message.channel.send('I will repeat what you tell me to \n syntax: /say [what to say...]');
+        break;
 
+      case 'timer':
+        message.channel.send('basically the same as /say but on a timer and I\'ll @you \n syntax: /timer [time to wait (in minutes), what to say]');
+        break;
 
+      case 'calc':
+        message.channel.send('calculate a non-complex math problem \n syntax: /calc[number, logic(+-*/), number, (logic(+-*/), number .... repeatable)]');
+        break;
+
+      case 'cigsmokingcosts':
+        message.channel.send('calculate various things about how cigarettes are bad \n syntax: /cigsmokingcosts[cigs smoked daily, cost of a pack]');
+        break;
+
+      default :
+        message.channel.send('These are my available commands: ping, say, timer, calc, cigsmokingcosts\n use help (command) to get more info each of them');
+        break;
+    }
+
+  }
 
 
 
