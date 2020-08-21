@@ -1,7 +1,6 @@
 
 const MongoClient = require('mongodb').MongoClient;
 const mongoUrl = 'mongodb://localhost:27017/DiscordBot';
-// const reminderCheckFreq = 1 * (1000 * 60);
 
 let _db;
 
@@ -23,7 +22,15 @@ const getDB = () => _db;
 
 const disconnectDB = () => _db.close();
 
+
+
 module.exports = {connectDB, getDB, disconnectDB};
+
+
+
+
+
+
 
 // module.exports = {
 

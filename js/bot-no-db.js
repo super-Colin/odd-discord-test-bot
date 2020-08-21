@@ -153,6 +153,10 @@ client.on("message", async message => {
     console.log(args)
     switch(args[0]){
 
+      case 'wrongCounter':
+        message.channel.send('how many times this person has been wrong');
+        break;
+
       case 'ping':
         message.channel.send('ping the server to find out your latency \n syntax: /ping [none]');
         break;
