@@ -1,3 +1,5 @@
+# Big Ups to:
+# https://realpython.com/how-to-make-a-discord-bot-python/
 
 # ---
 # Use .env file for configuration settings
@@ -8,8 +10,10 @@ from dotenv import load_dotenv
     # Import load_dotenv command from python-dotenv module
         # Use the CLI cmd "pip install -U python-dotenv" to make sure you have dotenv installed
 
-load_dotenv()
+load_dotenv() # Get variables from .env file
+PREFIX = os.getenv('DISCORD_PREFIX')
 TOKEN = os.getenv('DISCORD_TOKEN')
+GUILD = os.getenv('DISCORD_GUILD')
 
 
 
@@ -17,16 +21,63 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 # Set up bot
 
 import discord
-    # Import discord bot library
+    # Import discord bot library 
+        # Make sure you've used "pip install -U discord.py"
 
 client = discord.Client()
     # Initialize bot and store it in a variable for easy access
 
 
 
+# Simple version for only one server:
+    # @client.event
+    # async def on_ready():
+    #     print(f'{client.user} has connected!')
+    #         # Print in console that bot has connected
+
+
+# More robust version with support for multiple server connections
 @client.event
 async def on_ready():
-    print(f'{client.user} has connected!')
+    guild = discord.utils.get(client.guilds, name=GUILD)
+
+    print(
+        f'{client.user} is connected to the following guild:\n'
+        f'{guild.name} (id: {guild.id})\n'
+    )
+    # members = '\n - '.join([member.name for member in guild.members])
+    # print(f'Guild Members:\n - {members}')
+
+
+# @client.event
+# async def on_some(member):
+#     await member.create_dm()
+#     await member.dm_channel.send(
+#         'pssst.. hey kid, you should throw SuperColin a dollar'
+#     )
+
+
+@client.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    if message.content == '99!':
+        response = '99!'
+        await message.channel.send(response)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 client.run(TOKEN)
