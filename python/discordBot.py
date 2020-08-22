@@ -64,8 +64,19 @@ async def on_message(message):
 
     if message.content == '99!':
         response = '99!'
+        # print(message.author.id)
         await message.channel.send(response)
 
+    # My special commands :P
+    if message.author.id != 663600377677086730: # the number is my discord id
+        return
+        # Actual cmds:
+    else:
+        if message.content == '?':
+            response = '99!?'
+            await message.channel.send(response)
+        if message.content == "write db":
+            
 
 
 
