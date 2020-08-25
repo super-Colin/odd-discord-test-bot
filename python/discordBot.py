@@ -1,6 +1,7 @@
 # Big Ups to:
 # https://realpython.com/how-to-make-a-discord-bot-python/
 import re # regex for later
+from datetime import datetime, date
 
 # ---
 # Use .env file for configuration settings
@@ -15,6 +16,7 @@ load_dotenv() # Get variables from .env file
 PREFIX = os.getenv('DISCORD_PREFIX')
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
+GUILD_MAIN_CHANNEL_ID = os.getenv('GUILD_MAIN_CHANNEL_ID')
 
 # ---
 # Link DB
@@ -53,6 +55,12 @@ async def on_ready():
     )
     # members = '\n - '.join([member.name for member in guild.members])
     # print(f'Guild Members:\n - {members}')
+    
+    # Init DB for daily checks
+    if len(db) == 0:
+        print('db init')
+        today = datetime.today().date()
+        db.insert({"type":"systemInfo", "eventsCheckedOn": str(today)})
 
 
 
@@ -60,6 +68,28 @@ async def on_ready():
 async def on_message(message):
     if message.author.bot: # ignore bot messages
         return
+    
+    systemInfoEntry = db.search(Query().type == "systemInfo")
+        
+
+    # CHECK FOR DAILY EVENTS
+    if datetime.strptime(systemInfoEntry[0]['eventsCheckedOn'], "%Y-%m-%d").date() < datetime.today().date():
+        print('Checking daily events')
+        mainChannel = client.get_channel(int(GUILD_MAIN_CHANNEL_ID))
+
+        await mainChannel.send('there was an event today')
+
+
+        today = datetime.today().date()
+
+        db.update({"eventsCheckedOn": str(today)}, Query().type == "systemInfo")
+        
+        print('Daily Events checked and eventsCheckedOn updated with ' + str(today))
+    else:
+        print('Daily events already checked today')
+        
+
+
 
 
     command = ''
@@ -80,17 +110,40 @@ async def on_message(message):
 
         
         endOfCommand = slicedMessage.find(' ')
-        if slicedMessage.find(' ') == 0:
+        if slicedMessage.find(' ') == 0 and slicedMessage.find(' ', 1) != -1 :
             command = slicedMessage[0:]
+            args = False
         elif slicedMessage.find(' ') == -1:
             command = slicedMessage[0:]
             args = False
         else:
             command = slicedMessage[0:endOfCommand]
-            args = slicedMessage[endOfCommand:]
+            args = slicedMessage[endOfCommand + 1:]
 
-    await message.channel.send(command)
-    await message.channel.send(args)
+
+            # If parenthesis split up csv's
+        if args != False:
+            print('args not false')
+            print(args.find('('))
+            if args.find('(') == 1 or args.find('(') == 0:
+                endOfArgs = args.find(')')
+                regexp = '\s?([\s?a-zA-Z\d\/]+),?'
+                args = re.findall(regexp, args[1:endOfArgs])
+
+
+
+
+                
+    #         # --- For debugging ---
+    # await message.channel.send('Command : ' + command)
+    # if args:
+    #     await message.channel.send('args : ')
+    #     await message.channel.send(args)
+    # # if args[1]:
+    # #     for arg in args:
+    # #         await message.channel.send(arg)
+    # else:
+    #     await message.channel.send('args : None')
 
 
 
@@ -109,23 +162,79 @@ async def on_message(message):
     else:
         # Actual cmds:
 
+        # if command == '?/sc':
+        #     await message.channel.send('SuperColin is Awesome')
+
         if command == 'testMe':
             response = '99!?'
             await message.channel.send(response)
 
 
-        if message.content == "write db":
-            print('writing to db')
-            db.insert({"type":"test", "data": "a string"})
-            print('db write complete')
+
+        if command == "db.add": # (date, string)
+            db.insert({"type": 'test', "date": args[0], "event": args[1]})
+            await message.channel.send('db write complete')
 
 
-        if message.content == 'list db':
-           await message.channel.send(db.all())
+        if command == 'db.list':
+            await message.channel.send(db.all())
+
+
+        if command == 'db.clear':
+            db.truncate()
+            await message.channel.send('db cleared')
 
 
 
 
+        if command =='reminder.create': # (date [0], eventName [1], reminderText [2], repeat [3])
+                # Check inputs
+            inputsValid = True
+
+            try:
+                datetime.strptime(args[0], '%d/%m/%y')
+            except ValueError:
+                inputsValid = False
+                await message.channel.send('date not formatted correctly')
+
+            repeatOptions = ['none', 'weekly', 'monthly', 'yearly']
+            foundRepeatOption = False
+            for option in repeatOptions:
+                if option == args[3]:
+                    foundRepeatOption = True
+
+            if foundRepeatOption == False:
+                await message.channel.send('repeat option not found')
+                inputsValid = False
+            
+            # HELP
+            if args == 'help':
+                await message.channel.send('(\ndate: day/month/year "09/12/31",\n eventName: String,\n reminderText: String,\n repeat: "none" OR "weekly" OR "monthly" OR "yearly"\n)')
+                
+                await message.channel.send('Try something like:\n' + PREFIX + command + ' (22/07/24, Bot Birthday, I\'m just a bot, none)')
+
+                return
+
+            # Actually save to db
+            if inputsValid:
+                db.insert({"type": 'reminder', "date": args[0], "eventName":args[1], "reminderText": args[2], "repeat": args[3] } )
+                await message.channel.send('db entry saved')
+
+
+
+        if command =='listChannels':
+            for guild in client.guilds:
+                for channel in guild.channels:
+                    print(str(channel) + " - " + str(channel.id))
+
+
+        if command == 'announce':
+            mainChannel = client.get_channel(int(GUILD_MAIN_CHANNEL_ID))
+            print(mainChannel)
+            # text.replace('@everyone', 'everyone') # \u200b is our condom
+            mentionString = message.author.mention
+            await mainChannel.send('anoucement!! @\u200bSuperColin')
+            await mainChannel.send('anoucement!!' + mentionString)
 
 
 
