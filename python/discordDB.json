@@ -1,1 +1,1 @@
-{"_default": {"1": {"type": "systemInfo", "eventsCheckedOn": "2020-08-25"}}}
+{"_default": {"1": {"type": "systemInfo", "eventsCheckedOn": "2020-08-25"}, "2": {"type": "reminder", "date": "2020-08-25", "eventName": "Bot Birthday", "reminderText": "I'm just a bot", "repeat": "none", "usersToRemind": "<@669708852148568064>, <@617708384405159966>"}, "3": {"type": "reminder", "date": "2020-08-26", "eventName": "Reminder Test", "reminderText": "Reminder thing worked", "repeat": "none", "usersToRemind": "<@!663600377677086730>"}}}

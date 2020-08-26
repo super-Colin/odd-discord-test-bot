@@ -37,6 +37,8 @@ client = discord.Client()
 
 
 
+
+
 # Simple version for only one server:
     # @client.event
     # async def on_ready():
@@ -77,16 +79,23 @@ async def on_message(message):
         print('Checking daily events')
         mainChannel = client.get_channel(int(GUILD_MAIN_CHANNEL_ID))
 
-        await mainChannel.send('there was an event today')
+        todayDate = datetime.today().date()
+
+        events = db.search(Query().type == 'reminder')
+        for event in events:
+            eventDate = datetime.strptime(event['date'], "%Y-%m-%d").date()
+
+            if eventDate == todayDate:
+                response =  str(event['usersToRemind']) + '\n' + str(event['eventName']) + ' : ' + str(event['reminderText'])
+                await mainChannel.send(response)
+
+        # await mainChannel.send('there was an event today')
 
 
-        today = datetime.today().date()
-
-        db.update({"eventsCheckedOn": str(today)}, Query().type == "systemInfo")
-        
-        print('Daily Events checked and eventsCheckedOn updated with ' + str(today))
-    else:
-        print('Daily events already checked today')
+        db.update({"eventsCheckedOn": str(todayDate)}, Query().type == "systemInfo")
+        print('Daily Events checked and eventsCheckedOn updated with ' + str(todayDate))
+    # else:
+    #     print('Daily events already checked today')
         
 
 
@@ -127,7 +136,7 @@ async def on_message(message):
             print(args.find('('))
             if args.find('(') == 1 or args.find('(') == 0:
                 endOfArgs = args.find(')')
-                regexp = '\s?([\s?a-zA-Z\d\/]+),?'
+                regexp = '\s?([\s?a-zA-Z\d\/\'"-]+),?'
                 args = re.findall(regexp, args[1:endOfArgs])
 
 
@@ -192,15 +201,18 @@ async def on_message(message):
             inputsValid = True
 
             try:
-                datetime.strptime(args[0], '%d/%m/%y')
+                datetime.strptime(args[0], '%Y-%m-%d')
             except ValueError:
                 inputsValid = False
                 await message.channel.send('date not formatted correctly')
 
             repeatOptions = ['none', 'weekly', 'monthly', 'yearly']
             foundRepeatOption = False
+            print('args: ' + str(args))
+            print('option: ' + str(args[3]) )
             for option in repeatOptions:
                 if option == args[3]:
+                    print('option: ' + str(option) + str(args[3]))
                     foundRepeatOption = True
 
             if foundRepeatOption == False:
@@ -209,15 +221,21 @@ async def on_message(message):
             
             # HELP
             if args == 'help':
-                await message.channel.send('(\ndate: day/month/year "09/12/31",\n eventName: String,\n reminderText: String,\n repeat: "none" OR "weekly" OR "monthly" OR "yearly"\n)')
+                await message.channel.send('(\ndate: day/month/year "2025-12-21",\neventName: String,\nreminderText: String,\nrepeat: "none" OR "weekly" OR "monthly" OR "yearly",\nusersToRemind: @Someone, @AnotherPerson, @MorePeople < These must be mentions\n)')
                 
-                await message.channel.send('Try something like:\n' + PREFIX + command + ' (22/07/24, Bot Birthday, I\'m just a bot, none)')
+                await message.channel.send('Try something like:\n' + PREFIX + command + ' (2021-08-25, Bot Birthday, I\'m just a bot, none, @TestBot, @Free)')
 
                 return
 
             # Actually save to db
             if inputsValid:
-                db.insert({"type": 'reminder', "date": args[0], "eventName":args[1], "reminderText": args[2], "repeat": args[3] } )
+                userMentions = []
+                allUserMentions = message.mentions
+                for userMentioned in allUserMentions:
+                    userMentions.append(userMentioned.mention)
+                userMentionsString = ', '.join(userMentions)
+
+                db.insert({"type": 'reminder', "date": args[0], "eventName":args[1], "reminderText": args[2], "repeat": args[3], "usersToRemind": userMentionsString } )
                 await message.channel.send('db entry saved')
 
 
@@ -234,13 +252,53 @@ async def on_message(message):
             # text.replace('@everyone', 'everyone') # \u200b is our condom
             mentionString = message.author.mention
             await mainChannel.send('anoucement!! @\u200bSuperColin')
+            # print(mentionString)
             await mainChannel.send('anoucement!!' + mentionString)
 
 
 
 
+        if command == 'at':
+            mainChannel = client.get_channel(int(GUILD_MAIN_CHANNEL_ID))
+            userMention = message.mentions[0].mention
+            await mainChannel.send('at ' + userMention)
 
 
+
+
+        # if command == 'createEvent':
+        #     mainChannel = client.get_channel(int(GUILD_MAIN_CHANNEL_ID))
+
+        #     userMentions = []
+        #     allUserMentions = message.mentions
+        #     for userMentioned in allUserMentions:
+        #         userMentions.append(userMentioned.mention)
+
+        #     userMentionsString = ', '.join(userMentions)
+        #     print('mentions : ')
+        #     print(userMentions)
+        #     response = 'at ' + userMentionsString
+        #     db.insert({"type": "event", "users": userMentionsString})
+        #     await mainChannel.send(response)
+
+        if command == 'createEvent':
+            mainChannel = client.get_channel(int(GUILD_MAIN_CHANNEL_ID))
+
+
+            userMentions = []
+            allUserMentions = message.mentions
+            for userMentioned in allUserMentions:
+                userMentions.append(userMentioned.mention)
+            userMentionsString = ', '.join(userMentions)
+
+            db.insert({"type": "event", "users": userMentionsString})
+            
+            await mainChannel.send('Event saved')
+
+
+
+        if command == 'listEvents':
+            await message.channel.send(db.search(Query().type == "event"))
 
 
 
