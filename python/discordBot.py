@@ -99,7 +99,8 @@ async def on_message(message):
         
 
 
-
+    if message.content.startswith('-p') == True:
+        await message.channel.send(":( I'll be able to do that when I'm big and strong!")
 
     command = ''
     args = ''
