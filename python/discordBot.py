@@ -55,8 +55,8 @@ async def on_ready():
         f'{client.user} is connected to the following guild:\n'
         f'{guild.name} (id: {guild.id})\n'
     )
-    # members = '\n - '.join([member.name for member in guild.members])
-    # print(f'Guild Members:\n - {members}')
+    members = '\n - '.join([member.name for member in guild.members])
+    print(f'Guild Members:\n - {members}')
     
     # Init DB for daily checks
     if len(db) == 0:
@@ -98,9 +98,8 @@ async def on_message(message):
     #     print('Daily events already checked today')
         
 
-
-    if message.content.startswith('-p') == True:
-        await message.channel.send(":( I'll be able to do that when I'm big and strong!")
+    if '-p' in message.content:
+        await message.channel.send("pssst.. maybe you could help code me to do that")
 
     command = ''
     args = ''
@@ -140,6 +139,12 @@ async def on_message(message):
                 regexp = '\s?([\s?a-zA-Z\d\/\'"-]+),?'
                 args = re.findall(regexp, args[1:endOfArgs])
 
+            else:
+                print('args is : ' + args)
+                args = ''.join(args)
+                print('args is : ' + args)
+
+
 
 
 
@@ -155,8 +160,13 @@ async def on_message(message):
     # else:
     #     await message.channel.send('args : None')
 
+    if command == 'version' or command == '--version':
+        await message.channel.send('1.3.10')
 
 
+    if command == "help" or command == "--help":
+        response = "commands: reminder.create, "
+        await message.channel.send(response)
 
 
 
@@ -180,6 +190,9 @@ async def on_message(message):
             await message.channel.send(response)
 
 
+        if command == "db.init":
+            today = datetime.today().date()
+            db.insert({"type": "systemInfo", "eventsCheckedOn": str(today)})
 
         if command == "db.add": # (date, string)
             db.insert({"type": 'test', "date": args[0], "event": args[1]})
@@ -187,7 +200,12 @@ async def on_message(message):
 
 
         if command == 'db.list':
-            await message.channel.send(db.all())
+            if args != False:
+                query = str(args)
+                print('query is  ' + query)
+                await message.channel.send(db.search(Query().type == query))
+            else:
+                await message.channel.send(db.all())
 
 
         if command == 'db.clear':
@@ -263,45 +281,6 @@ async def on_message(message):
             mainChannel = client.get_channel(int(GUILD_MAIN_CHANNEL_ID))
             userMention = message.mentions[0].mention
             await mainChannel.send('at ' + userMention)
-
-
-
-
-        # if command == 'createEvent':
-        #     mainChannel = client.get_channel(int(GUILD_MAIN_CHANNEL_ID))
-
-        #     userMentions = []
-        #     allUserMentions = message.mentions
-        #     for userMentioned in allUserMentions:
-        #         userMentions.append(userMentioned.mention)
-
-        #     userMentionsString = ', '.join(userMentions)
-        #     print('mentions : ')
-        #     print(userMentions)
-        #     response = 'at ' + userMentionsString
-        #     db.insert({"type": "event", "users": userMentionsString})
-        #     await mainChannel.send(response)
-
-        if command == 'createEvent':
-            mainChannel = client.get_channel(int(GUILD_MAIN_CHANNEL_ID))
-
-
-            userMentions = []
-            allUserMentions = message.mentions
-            for userMentioned in allUserMentions:
-                userMentions.append(userMentioned.mention)
-            userMentionsString = ', '.join(userMentions)
-
-            db.insert({"type": "event", "users": userMentionsString})
-            
-            await mainChannel.send('Event saved')
-
-
-
-        if command == 'listEvents':
-            await message.channel.send(db.search(Query().type == "event"))
-
-
 
 
 

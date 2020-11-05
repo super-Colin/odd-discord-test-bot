@@ -1,1 +1,31 @@
-{"_default": {"1": {"type": "systemInfo", "eventsCheckedOn": "2020-08-27"}, "2": {"type": "reminder", "date": "2020-08-25", "eventName": "Bot Birthday", "reminderText": "I'm just a bot", "repeat": "none", "usersToRemind": "<@669708852148568064>, <@617708384405159966>"}, "3": {"type": "reminder", "date": "2020-08-26", "eventName": "Reminder Test", "reminderText": "Reminder thing worked", "repeat": "none", "usersToRemind": "<@!663600377677086730>"}}}
+{
+    "_default": {
+        "1": {
+            "meta": {
+                "type":"systemInfo"
+            },
+            "eventsCheckedOn": "2020-09-06"
+        },
+
+        "2": {
+            "meta": {
+                "type":"castleInfo"
+            },
+            "health":"20"
+        },
+
+        "3": {
+            "meta": {
+                "type":"playerInfo",
+                "playerID": "190238992468279297",
+                "playerName": "Super Colin"
+            },
+            "busyDoing": "gathering wood",
+            "stuffGathered":{
+                "materials": "3",
+                "food":"1"
+            }
+        }
+        
+    }
+}
