@@ -16,7 +16,8 @@ PREFIX = os.getenv('DISCORD_PREFIX')
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 
-TIMESCALE = os.getenv('TIMESCALE')
+TIMESCALE = int(os.getenv('TIMESCALE'))
+DIFFICULTYSCALE = float(os.getenv('DIFFICULTYSCALE'))
 
 # ---
 # Link DB(s)
@@ -58,6 +59,7 @@ async def on_message(message): # This is executed everytime a message is posted 
         return
 
     command = ''
+    castleInfo = ''
     messageAuthorInDB = castleDB.search(Query().playerID == message.author.id)
 
     if len(castleDB) > 1:
@@ -79,32 +81,40 @@ async def on_message(message): # This is executed everytime a message is posted 
 
 
 
-
-            # ----------
+            # ------------------------------
+            # ---------------------------------------------------
             # Start actual commands
 
         if command == 'version' or command == '-v':
-            await message.channel.send('0.1.1')
+            await message.channel.send('0.1.3')
+            return
 
-        if command == "ls":
+        if command == "ls" or command == "db":
             response = castleDB.all()
             await message.channel.send(response)
+            return
 
         if command == "len":
             response = len(castleDB)
             await message.channel.send(response)
+            return
 
         if command == "author" or command == "me":
             if messageAuthorInDB:
                 await message.channel.send(messageAuthorInDB)
-            # response = messageAuthorInDB
             else:
                 await message.channel.send("didn't find you in db")
+            return
+
+        if command == "now":
+            await message.channel.send(int(time.time()))
+            return
 
         if command == "help":
             response = 'we all need help'
             await message.channel.send(response)
-            
+            return
+
 
 
 
@@ -114,20 +124,38 @@ async def on_message(message): # This is executed everytime a message is posted 
             else:
                 castleDB.insert({
                     "type": "castleInfo",
+                    "players": 0,
+                    "serfs": 0,
                     "health": 20,
+                    "barricade": 20,
                     "foodStored": 20,
                     "materialStored": 20
                 })
                 await message.channel.send('new stronghold founded')
+            return
+
+
+# ------------check if there is a stronghold-----------
+        if not castleInfo:
+            await message.channel.send('there is no fortress')
+            return
+# -----------------------------------------------------
+
 
         if command == "deleteStronghold" or command == "del":
             castleDB.truncate()
+            castleDB.insert({
+                "type": "systemInfo",
+                # "lastCommand":"null" # This might be useful in another system, but as a discord bot it already has a full command (and response) history
+            })
             await message.channel.send('stronghold deleted')
+            return
 
 
-        if command == "castleStatus" or command == "status":
+        if command == "castleStatus" or command == "status" or command == "base":
             status = castleDB.search(Query().type == "castleInfo")
             await message.channel.send(status)
+            return
 
 
         if command == "joinStronghold" or command == "join":
@@ -143,32 +171,77 @@ async def on_message(message): # This is executed everytime a message is posted 
                     "foodGathered":0,
                     "materialsGathered":0
                 })
+                castleDB.update({"players": castleInfo[0]["players"] + 1 },Query().type == "castleInfo")
                 await message.channel.send('welcome to our fortress')
+            return
 
-    
+
+# ---------------check if user has joined--------------
+        if not messageAuthorInDB:
+            await message.channel.send('you haven\'t joined this fortress yet')
+            return
+# -----------------------------------------------------
+
+
+        if command == 'return' or command == "home" or command == "back":
+            authorDoing = messageAuthorInDB[0]["busyDoing"]
+            if authorDoing == "idle":
+                await message.channel.send("you're not doing anything")
+                return
+            if messageAuthorInDB[0]["busyUntil"] < int(time.time()):
+                if authorDoing == "gatherFood":
+                    foodGathered = messageAuthorInDB[0]["foodGathered"]
+                    foodStored = castleInfo[0]["foodStored"]
+                    castleDB.update({"foodStored": foodStored + foodGathered}, Query().type == "castleInfo")
+                    castleDB.update({'foodGathered': 0}, Query().playerID == message.author.id)
+                    castleDB.update({'busyDoing': "idle"}, Query().playerID == message.author.id)
+                    castleDB.update({'busyUntil': "idle"}, Query().playerID == message.author.id)
+                    await message.channel.send('you have returned with ' + str(foodGathered) + ' food')
+                elif authorDoing == "gatherMaterial":
+                    materialGathered = messageAuthorInDB[0]["materialGathered"]
+                    materialStored = castleInfo[0]["materialStored"]
+                    castleDB.update({"materialStored": materialStored + materialGathered}, Query().type == "castleInfo")
+                    castleDB.update({'materialGathered': 0}, Query().playerID == message.author.id)
+                    castleDB.update({'busyDoing': "idle"}, Query().playerID == message.author.id)
+                    castleDB.update({'busyUntil': "idle"}, Query().playerID == message.author.id)
+                    await message.channel.send('you have returned with ' + str(materialGathered) + ' material')
+            else:
+                await message.channel.send("you're still busy")
+            return
+
+
+# ---------------check if user is busy-----------------
+        if not messageAuthorInDB[0]["busyDoing"] == "idle":
+            await message.channel.send("You're still busy doing: " + messageAuthorInDB[0]["busyDoing"])
+            return
+# -----------------------------------------------------
+
+
         if command == "gatherFood" or command == "food":
-            if messageAuthorInDB:
-                castleDB.update({'foodGathered': 10}, Query().playerID == message.author.id)
-                castleDB.update({'busyDoing': "gathering food"}, Query().playerID == message.author.id)
-                # castleDB.update({'busyUntil': str(datetime.now())}, Query().playerID == message.author.id)
-                castleDB.update({'busyUntil': str( int(time.time() + TIMESCALE) )}, Query().playerID == message.author.id)
-                await message.channel.send('you have gone to collect food')
-            else:
-                await message.channel.send('you haven\'t joined this fortress yet')
+            castleDB.update({'foodGathered': 10}, Query().playerID == message.author.id)
+            castleDB.update({'busyDoing': "gatherFood"}, Query().playerID == message.author.id)
+            castleDB.update({'busyUntil': int(time.time()) + TIMESCALE }, Query().playerID == message.author.id)
+            await message.channel.send('you have gone to collect food')
+            return
+        if command == "gatherMaterial" or command == "material":
+            castleDB.update({'materialGathered': 10}, Query().playerID == message.author.id)
+            castleDB.update({'busyDoing': "gatherMaterial"}, Query().playerID == message.author.id)
+            castleDB.update({'busyUntil': int(time.time()) + TIMESCALE }, Query().playerID == message.author.id)
+            await message.channel.send('you have gone to collect material')
+            return
 
-
-        if command == 'return':
-            # if castleDB.contains(Query().playerID == message.author.id):
-            if messageAuthorInDB:
-                foodGathered = messageAuthorInDB[0]["foodGathered"]
-                foodStored = castleInfo[0]["foodStored"]
-                castleDB.update({"foodStored" : foodStored + foodGathered}, Query().type == "castleInfo")
-                castleDB.update({'foodGathered': 0}, Query().playerID == message.author.id)
-                castleDB.update({'busyDoing': "idle"}, Query().playerID == message.author.id)
-                castleDB.update({'busyUntil': "idle"}, Query().playerID == message.author.id)
-                await message.channel.send('you have returned with ' + str(foodGathered) + ' food')
+        if command == "barricade" or command == "repair":
+            if castleInfo[0]["materialStored"] < 20:
+                await message.channel.send("you don't have enough material")
+                return
             else:
-                await message.channel.send('you haven\'t joined this fortress yet')
+                castleDB.update({"busyDoing":"barricade"} ,Query().playerID == message.author.id)
+                castleDB.update({"busyUntil": int(time.time()) + TIMESCALE }, Query().playerID == message.author.id)
+                castleDB.update({"materialStored": castleInfo[0]["materialStored"] - 10}, Query().type == "castleInfo")
+                castleDB.update({"barricade": castleInfo[0]["barricade"] + 10}, Query().type == "castleInfo")
+                await message.channel.send("you start repairing")
+                return
+
 
 
 
