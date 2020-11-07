@@ -86,7 +86,7 @@ async def on_message(message): # This is executed everytime a message is posted 
             # Start actual commands
 
         if command == 'version' or command == '-v':
-            await message.channel.send('0.1.3')
+            await message.channel.send('0.1.4')
             return
 
         if command == "ls" or command == "db":
@@ -183,7 +183,7 @@ async def on_message(message): # This is executed everytime a message is posted 
 # -----------------------------------------------------
 
 
-        if command == 'return' or command == "home" or command == "back":
+        if command == 'return' or command == "home" or command == "done":
             authorDoing = messageAuthorInDB[0]["busyDoing"]
             if authorDoing == "idle":
                 await message.channel.send("you're not doing anything")
@@ -205,6 +205,12 @@ async def on_message(message): # This is executed everytime a message is posted 
                     castleDB.update({'busyDoing': "idle"}, Query().playerID == message.author.id)
                     castleDB.update({'busyUntil': "idle"}, Query().playerID == message.author.id)
                     await message.channel.send('you have returned with ' + str(materialGathered) + ' material')
+                elif authorDoing == "barricade":
+                    barricadeAdded = 10
+                    castleDB.update({"barricade": castleInfo[0]["barricade"] + barricadeAdded}, Query().type == "castleInfo")
+                    castleDB.update({'busyDoing': "idle"}, Query().playerID == message.author.id)
+                    castleDB.update({'busyUntil': "idle"}, Query().playerID == message.author.id)
+                    await message.channel.send('You added: ' + str(barricadeAdded) + ' to the barricade')
             else:
                 await message.channel.send("you're still busy")
             return
@@ -237,8 +243,7 @@ async def on_message(message): # This is executed everytime a message is posted 
             else:
                 castleDB.update({"busyDoing":"barricade"} ,Query().playerID == message.author.id)
                 castleDB.update({"busyUntil": int(time.time()) + TIMESCALE }, Query().playerID == message.author.id)
-                castleDB.update({"materialStored": castleInfo[0]["materialStored"] - 10}, Query().type == "castleInfo")
-                castleDB.update({"barricade": castleInfo[0]["barricade"] + 10}, Query().type == "castleInfo")
+                castleDB.update({"materialStored": castleInfo[0]["materialStored"] - 20}, Query().type == "castleInfo")
                 await message.channel.send("you start repairing")
                 return
 
