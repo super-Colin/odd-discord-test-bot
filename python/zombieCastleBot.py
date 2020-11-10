@@ -49,6 +49,7 @@ async def on_ready():  # This is executed when you first run the script to get t
         print('db init')
         castleDB.insert({
             "type":"systemInfo",
+            "highscore":0
             # "lastCommand":"null"
         })
 
@@ -61,7 +62,9 @@ async def on_message(message): # This is executed everytime a message is posted 
 
     command = ''
     castleInfo = ''
-    messageAuthorInDB = castleDB.search(Query().playerID == message.author.id)[0]
+    messageAuthorInDB = castleDB.search(Query().playerID == message.author.id)
+    if messageAuthorInDB:
+        messageAuthorInDB = messageAuthorInDB[0]
 
     if len(castleDB) > 1:
         castleInfo = castleDB.search(Query().type == "castleInfo")[0]
@@ -90,7 +93,7 @@ async def on_message(message): # This is executed everytime a message is posted 
         dayOfMessage = int(timeOfMessage / DAYLENGTH)
 
         if command == 'version' or command == '-v':
-            await message.channel.send('0.2.0')
+            await message.channel.send('0.2.2')
             return
 
         if command == "ls" or command == "db":
@@ -155,18 +158,47 @@ async def on_message(message): # This is executed everytime a message is posted 
         daysSinceUpdate = dayOfMessage - castleInfo["lastDayUpdated"] # difference between the message and the last day the bot did an overnight attack
         daysSurvived = dayOfMessage - castleInfo["firstDay"]
 
-        if daysSinceUpdate:
-            castleDB.update({"lastDayUpdated": dayOfMessage}, Query().type == "castleInfo")
-            await message.channel.send(str(daysSinceUpdate) + ' days since updated')
+        # --- DAILY EVENTS ---
+        if daysSinceUpdate: # have events been fired since the last day?
+            attackDamage = daysSinceUpdate * 3
+            newBarricadeTotal = castleInfo["barricade"] - attackDamage
+            if newBarricadeTotal < 0: # if barricade is below 0 spill damage into health
+                newHealthTotal = castleInfo["health"] + newBarricadeTotal # which will be negative to reach this point
+                if newHealthTotal <= 0:
+                    pointsTotal = daysSurvived * 12 + (castleInfo["foodStored"] + castleInfo["materialStored"])
+                    await message.channel.send('The fortress has been overrun :( You made it to ' + str(pointsTotal) + " points!")
+                    await message.channel.send("Time to start a new one!")
+                    return
+                castleDB.update({"health":newHealthTotal}, Query().type == "castleInfo")
+            castleDB.update({"barricade": newBarricadeTotal, "lastDayUpdated": dayOfMessage}, Query().type == "castleInfo")
+            
+            await message.channel.send("No one has attended to the stronghold in " + str(daysSinceUpdate) + ' days, and it was attacked for ' + str(attackDamage) + " damage in all")
 
 
         if command == "deleteStronghold" or command == "del":
             castleDB.truncate()
             castleDB.insert({
                 "type": "systemInfo",
+                "highscore": 0
             })
             await message.channel.send('stronghold deleted')
             return
+
+        if command == "dayDif":
+            await message.channel.send(daysSinceUpdate)
+            return
+        if command == "days":
+            await message.channel.send(daysSurvived)
+            return
+
+
+# ------------check stronghold isn't dead--------------
+        if castleInfo["health"] < 1:
+            pointsTotal = daysSurvived * 12 + (castleInfo["foodStored"] + castleInfo["materialStored"])
+            await message.channel.send('The fortress has been overrun :( You made it to ' + str(pointsTotal) + " points!")
+            await message.channel.send("Time to start a new one!")
+            return
+# -----------------------------------------------------
 
 
         if command == "castleStatus" or command == "status" or command == "base":
@@ -183,6 +215,7 @@ async def on_message(message): # This is executed everytime a message is posted 
                     "type":"playerInfo",
                     "playerID": message.author.id,
                     "playerName": message.author.name,
+                    "joinedOn": int(time.time()),
                     "busyDoing": "idle",
                     "busyUntil":"idle",
                     "foodGathered":0,
@@ -193,12 +226,6 @@ async def on_message(message): # This is executed everytime a message is posted 
             return
 
 
-        if command == "dayDif":
-            await message.channel.send(daysSinceUpdate)
-            return
-        if command == "days":
-            await message.channel.send(daysSurvived)
-            return
 
 # ---------------check if user has joined--------------
         if not messageAuthorInDB:
@@ -214,26 +241,19 @@ async def on_message(message): # This is executed everytime a message is posted 
                 return
             if messageAuthorInDB["busyUntil"] < timeOfMessage:
                 if authorDoing == "gatherFood":
-                    foodGathered = messageAuthorInDB["foodGathered"]
-                    foodStored = castleInfo["foodStored"]
-                    castleDB.update({"foodStored": foodStored + foodGathered}, Query().type == "castleInfo")
-                    castleDB.update({'foodGathered': 0}, Query().playerID == message.author.id)
-                    castleDB.update({'busyDoing': "idle"}, Query().playerID == message.author.id)
-                    castleDB.update({'busyUntil': "idle"}, Query().playerID == message.author.id)
-                    await message.channel.send('you have returned with ' + str(foodGathered) + ' food')
+                    newFoodTotal = castleInfo["foodStored"] + messageAuthorInDB["foodGathered"]
+                    castleDB.update({"foodStored": newFoodTotal}, Query().type == "castleInfo")
+                    castleDB.update({'foodGathered': 0, 'busyDoing': "idle", 'busyUntil': "idle"}, Query().playerID == message.author.id)
+                    await message.channel.send('you have returned with ' + str(messageAuthorInDB["foodGathered"]) + ' food')
                 elif authorDoing == "gatherMaterial":
-                    materialGathered = messageAuthorInDB["materialGathered"]
-                    materialStored = castleInfo["materialStored"]
-                    castleDB.update({"materialStored": materialStored + materialGathered}, Query().type == "castleInfo")
-                    castleDB.update({'materialGathered': 0}, Query().playerID == message.author.id)
-                    castleDB.update({'busyDoing': "idle"}, Query().playerID == message.author.id)
-                    castleDB.update({'busyUntil': "idle"}, Query().playerID == message.author.id)
-                    await message.channel.send('you have returned with ' + str(materialGathered) + ' material')
+                    newMaterialTotal = messageAuthorInDB["materialGathered"] + castleInfo["materialStored"]
+                    castleDB.update({"materialStored": newMaterialTotal}, Query().type == "castleInfo")
+                    castleDB.update({'materialGathered': 0, 'busyDoing': "idle", 'busyUntil': "idle"}, Query().playerID == message.author.id)
+                    await message.channel.send('you have returned with ' + str(messageAuthorInDB["materialGathered"]) + ' material')
                 elif authorDoing == "barricade":
                     barricadeAdded = 10
                     castleDB.update({"barricade": castleInfo["barricade"] + barricadeAdded}, Query().type == "castleInfo")
-                    castleDB.update({'busyDoing': "idle"}, Query().playerID == message.author.id)
-                    castleDB.update({'busyUntil': "idle"}, Query().playerID == message.author.id)
+                    castleDB.update({'busyDoing': "idle", 'busyUntil': "idle"}, Query().playerID == message.author.id)
                     await message.channel.send('You added: ' + str(barricadeAdded) + ' to the barricade')
             else:
                 await message.channel.send("you're still busy")
@@ -248,15 +268,12 @@ async def on_message(message): # This is executed everytime a message is posted 
 
 
         if command == "gatherFood" or command == "food":
-            castleDB.update({'foodGathered': 10}, Query().playerID == message.author.id)
-            castleDB.update({'busyDoing': "gatherFood"}, Query().playerID == message.author.id)
-            castleDB.update({'busyUntil': timeOfMessage + TIMESCALE }, Query().playerID == message.author.id)
+            castleDB.update({'foodGathered': 10, 'busyDoing': "gatherFood", 'busyUntil': timeOfMessage + TIMESCALE}, Query().playerID == message.author.id)
             await message.channel.send('you have gone to collect food')
             return
+
         if command == "gatherMaterial" or command == "material":
-            castleDB.update({'materialGathered': 10}, Query().playerID == message.author.id)
-            castleDB.update({'busyDoing': "gatherMaterial"}, Query().playerID == message.author.id)
-            castleDB.update({'busyUntil': timeOfMessage + TIMESCALE }, Query().playerID == message.author.id)
+            castleDB.update({'materialGathered': 10, 'busyDoing': "gatherMaterial", 'busyUntil': timeOfMessage + TIMESCALE}, Query().playerID == message.author.id)
             await message.channel.send('you have gone to collect material')
             return
 
@@ -265,8 +282,7 @@ async def on_message(message): # This is executed everytime a message is posted 
                 await message.channel.send("you don't have enough material")
                 return
             else:
-                castleDB.update({"busyDoing":"barricade"} ,Query().playerID == message.author.id)
-                castleDB.update({"busyUntil": timeOfMessage + TIMESCALE }, Query().playerID == message.author.id)
+                castleDB.update({"busyDoing":"barricade", "busyUntil": timeOfMessage + TIMESCALE} ,Query().playerID == message.author.id)
                 castleDB.update({"materialStored": castleInfo["materialStored"] - 20}, Query().type == "castleInfo")
                 await message.channel.send("you start repairing")
                 return
