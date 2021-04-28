@@ -3,6 +3,7 @@
 import discord  # Make sure you've used "pip install -U discord.py"
 from tinydb import TinyDB, Query  # "pip install -U tinydb"
 import re  # regex for later, native to python
+import random
 from datetime import datetime, date # native to python
 
 # ---
@@ -79,7 +80,7 @@ async def on_message(message): # This is executed everytime a message is posted 
             response = messageAuthorInDB
             await message.channel.send(response)
 
-        if command == "help" or command == "Stronghold":
+        if command == "help":
             response = 'we all need help'
             await message.channel.send(response)
         
@@ -88,6 +89,24 @@ async def on_message(message): # This is executed everytime a message is posted 
                 await message.channel.send('points to ' + str(message.mentions[0].nick))
             else:                
                 await message.channel.send('points to ' + str(message.mentions))
+
+        if command == "roll6":
+            response = random.randint(1, 6)
+            if message.author.id == 663600377677086730:
+                response = '7 soo much crit'
+            await message.channel.send(response)
+
+        if command == "roll20":
+            response = random.randint(1, 20)
+            if message.author.id == 663600377677086730:
+                response = '21 soo much crit'
+            await message.channel.send(response)
+
+        if command == "roll100":
+            response = random.randint(1, 100)
+            if message.author.id == 663600377677086730:
+                response = '101 soo much crit'
+            await message.channel.send(response)
 
 
 client.run(TOKEN)

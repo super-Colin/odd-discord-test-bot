@@ -34,7 +34,7 @@ client = discord.Client()
 
 # Support for multiple server connections
 @client.event
-async def on_ready():  # This is executed when you first run the script to get the bot running
+async def on_ready():  # This is triggered when you first execute the script to get the bot running
     guild = discord.utils.get(client.guilds, name=GUILD)
 
     print(
@@ -55,7 +55,7 @@ async def on_ready():  # This is executed when you first run the script to get t
 
 
 @client.event
-async def on_message(message): # This is executed everytime a message is posted on the discord server
+async def on_message(message): # This is triggered everytime a message is posted on the discord server
 
     if message.author.bot:  # ignore bot messages
         return
@@ -136,6 +136,7 @@ async def on_message(message): # This is executed everytime a message is posted 
                     "type": "castleInfo",
                     "timeStarted":int(timeOfMessage),
                     "firstDay": int(dayOfMessage),
+                    "lastDayAlive": 0,
                     "lastDayUpdated": int(dayOfMessage),
                     "players": 0,
                     "serfs": 0,
@@ -166,6 +167,7 @@ async def on_message(message): # This is executed everytime a message is posted 
                 newHealthTotal = castleInfo["health"] + newBarricadeTotal # which will be negative to reach this point
                 if newHealthTotal <= 0:
                     pointsTotal = daysSurvived * 12 + (castleInfo["foodStored"] + castleInfo["materialStored"])
+                    castleDB.update({"lastDayAlive": dayOfMessage}, Query().type == "castleInfo")
                     await message.channel.send('The fortress has been overrun :( You made it to ' + str(pointsTotal) + " points!")
                     await message.channel.send("Time to start a new one!")
                     return
@@ -194,7 +196,7 @@ async def on_message(message): # This is executed everytime a message is posted 
 
 # ------------check stronghold isn't dead--------------
         if castleInfo["health"] < 1:
-            pointsTotal = daysSurvived * 12 + (castleInfo["foodStored"] + castleInfo["materialStored"])
+            pointsTotal = (castleInfo["lastDayAlive"] - castleInfo["firstDay"]) * 12 + (castleInfo["foodStored"] + castleInfo["materialStored"])
             await message.channel.send('The fortress has been overrun :( You made it to ' + str(pointsTotal) + " points!")
             await message.channel.send("Time to start a new one!")
             return
@@ -286,13 +288,6 @@ async def on_message(message): # This is executed everytime a message is posted 
                 castleDB.update({"materialStored": castleInfo["materialStored"] - 20}, Query().type == "castleInfo")
                 await message.channel.send("you start repairing")
                 return
-
-
-
-
-
-
-
 
 
 
