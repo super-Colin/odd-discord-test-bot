@@ -6,4 +6,5 @@ secrets.txt
 python/.env
 ptyhon/discordDB.json
 
+*.env
 *.json
