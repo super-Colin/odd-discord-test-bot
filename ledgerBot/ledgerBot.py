@@ -51,22 +51,37 @@ async def add(ctx, left: int, right: int):
 
 
 
-@bot.command()
-async def pay(ctx, toMember: discord.Member, amount):
-    fromMember = ctx.author
-    """Send tokens to someone"""
-    await ctx.send(f'working on it... sending {amount} tokens to {toMember} from {fromMember}')
+# @bot.command()
+# async def pay(ctx, toMember: discord.Member, amount):
+#     fromMember = ctx.author
+#     """Send tokens to someone"""
+#     await ctx.send(f'working on it... sending {amount} tokens to {toMember} from {fromMember}')
+
+
 
 
 @bot.command()
-async def peeps(ctx, toMember: discord.Member):
-    fromMember = ctx.author.id
-    msg = (f'{fromMember} \n {toMember.id}')
+async def headers(ctx):
+    wks = await getWorkSheet()
+    table = []
+    for row in wks:
+        table.append(row)
+    # get the headers and remove them from the table
+    tableHeaders = table[0]
+    table.pop(0)
+    # put indexes on the labels we want
+    ledgerIndexes = getLabelIndexes(tableHeaders)
+    msg = (f'{ledgerIndexes}')
     await ctx.send(msg)
 
 
 @bot.command()
 async def balance(ctx):
+# async def balance(ctx, targetAccount: discord.Member):
+    msg = ''
+    targetAccountId = str(ctx.author.id)
+    # targetAccountId = targetAccount.id
+    balance = ''
     wks = await getWorkSheet()
 
     # create a list containing all rows from the sheet
@@ -79,10 +94,23 @@ async def balance(ctx):
     # put indexes on the labels we want
     ledgerIndexes = getLabelIndexes(tableHeaders)
 
-    msg = (f'{ledgerIndexes}')
-    # for row in table:
-    #     if row[ledgerIndexes['From Account ID']] == ctx.author.id :
-    #         msg =+ row[ledgerIndexes['From Account ID']]
+    
+    #loop through table
+    foundIt = 'No'
+    action = ''
+    date = ''
+    fromAccount = ''
+    for row in table:
+        #check if it was to our target account
+        if row[ledgerIndexes['To Account ID']] == targetAccountId :
+            foundIt = 'YES!!'
+            balance = row[ledgerIndexes['To Account Balance']]
+            action = row[ledgerIndexes['Action']]
+            date = row[ledgerIndexes['Date']]
+            fromAccount = row[ledgerIndexes['From Account']]
+
+    msg = (f'Found account: {foundIt} \n The balance of {targetAccountId} is {balance} \n from a {action} on {date} from {fromAccount}')
+    # msg = (f'{theRows}')
     await ctx.send(msg)
 
 
@@ -123,9 +151,15 @@ async def getWorkSheet():
 def getLabelIndexes(tableHeaders):
     # figure out what columns are the ones we want
     ledgerIndexes = {
+        'Date': '',
+        'Time': '',
         'Action': '',
+        'From Account': 0,
         'From Account ID': 0,
+        'From Account Balance': 0,
+        'To Account': 0,
         'To Account ID': 0,
+        'To Account Balance': 0,
         'Amount': 0,
     }
     for columnIndex, columnHeader in enumerate(tableHeaders):
@@ -133,6 +167,12 @@ def getLabelIndexes(tableHeaders):
             if columnHeader == labelString:
                 ledgerIndexes[labelString] = columnIndex
     return ledgerIndexes
+
+
+
+
+
+
 
 
 
