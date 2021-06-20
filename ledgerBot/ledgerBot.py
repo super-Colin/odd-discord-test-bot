@@ -1,7 +1,9 @@
 # This example requires the 'members' privileged intents
 
 
-# from datetime import datetime, date
+from datetime import datetime, date
+from google.oauth2 import service_account
+import pygsheets
 # ---
 # Use .env file for configuration settings
 
@@ -13,8 +15,13 @@ from dotenv import load_dotenv
 load_dotenv() # Get variables from .env file
 PREFIX = os.getenv('DISCORD_PREFIX')
 TOKEN = os.getenv('DISCORD_TOKEN')
-    # ---
 
+# For Gsheets
+SPREADSHEET_ID = os.getenv('GSHEETS_SPREADSHEET_ID')
+RANGE_NAME = os.getenv('GSHEETS_RANGE_NAME')
+GSHEETS_SPREADSHEET_URL_KEY = os.getenv('GSHEETS_SPREADSHEET_URL_KEY')
+    # ---
+serviceAccountFile = './gCredentials.env.json'
 
 import discord
 from discord.ext import commands
@@ -49,6 +56,87 @@ async def pay(ctx, toMember: discord.Member, amount):
     fromMember = ctx.author
     """Send tokens to someone"""
     await ctx.send(f'working on it... sending {amount} tokens to {toMember} from {fromMember}')
+
+
+@bot.command()
+async def peeps(ctx, toMember: discord.Member):
+    fromMember = ctx.author.id
+    msg = (f'{fromMember} \n {toMember.id}')
+    await ctx.send(msg)
+
+
+@bot.command()
+async def balance(ctx):
+    wks = await getWorkSheet()
+
+    # create a list containing all rows from the sheet
+    table=[]
+    for row in wks:
+        table.append(row)
+    # get the headers and remove them from the table
+    tableHeaders = table[0]
+    table.pop(0)
+    # put indexes on the labels we want
+    ledgerIndexes = getLabelIndexes(tableHeaders)
+
+    msg = (f'{ledgerIndexes}')
+    # for row in table:
+    #     if row[ledgerIndexes['From Account ID']] == ctx.author.id :
+    #         msg =+ row[ledgerIndexes['From Account ID']]
+    await ctx.send(msg)
+
+
+@bot.command()
+async def longBalance(ctx):
+    wks = await getWorkSheet()
+
+    table = []
+    for row in wks:
+        table.append(row)
+    tableHeaders = table[0]
+    table.pop(0)
+
+    ledgerIndexes = getLabelIndexes(tableHeaders)
+    msg = (f'{ledgerIndexes}')
+    # for row in table:
+    #     if row[ledgerIndexes['From Account ID']] == ctx.author.id :
+    #         msg =+ row[ledgerIndexes['From Account ID']]
+    await ctx.send(msg)
+
+
+@bot.command()
+async def sheetDump(ctx):
+    wks = await getWorkSheet()
+    table = []
+    for row in wks:
+        table.append(row)
+    msg = (f'{table}')
+    await ctx.send(msg)
+
+
+async def getWorkSheet():
+    client = pygsheets.authorize(service_file=serviceAccountFile)
+    sheet = client.open_by_key(GSHEETS_SPREADSHEET_URL_KEY)
+    wks = sheet.worksheet_by_title('Sheet1')
+    return wks
+
+def getLabelIndexes(tableHeaders):
+    # figure out what columns are the ones we want
+    ledgerIndexes = {
+        'Action': '',
+        'From Account ID': 0,
+        'To Account ID': 0,
+        'Amount': 0,
+    }
+    for columnIndex, columnHeader in enumerate(tableHeaders):
+        for labelString in ledgerIndexes:
+            if columnHeader == labelString:
+                ledgerIndexes[labelString] = columnIndex
+    return ledgerIndexes
+
+
+
+
 
 
 

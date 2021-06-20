@@ -1,16 +1,34 @@
 from __future__ import print_function
-import os.path
+# import os.path
+
+
+# ---
+# Use .env file for configuration settings
+
+import os
+# Load os module to access other files (.env)
+from dotenv import load_dotenv
+# Import load_dotenv command from python-dotenv module
+# Use the CLI cmd "pip install -U python-dotenv" to make sure you have dotenv installed
+load_dotenv()  # Get variables from .env file
+SPREADSHEET_ID = os.getenv('GSHEETS_SPREADSHEET_ID')
+RANGE_NAME = os.getenv('GSHEETS_RANGE_NAME')
+# ---
+
+
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
+
+
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
 # The ID and range of a sample spreadsheet.
-SAMPLE_SPREADSHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms'
-SAMPLE_RANGE_NAME = 'Class Data!A2:E'
+# SPREADSHEET_ID = ''
+# RANGE_NAME = ''
 
 def main():
     """Shows basic usage of the Sheets API.
@@ -38,8 +56,7 @@ def main():
 
     # Call the Sheets API
     sheet = service.spreadsheets()
-    result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                range=SAMPLE_RANGE_NAME).execute()
+    result = sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
     values = result.get('values', [])
 
     if not values:

@@ -3,7 +3,7 @@
 import discord  # Make sure you've used "pip install -U discord.py"
 from tinydb import TinyDB, Query  # "pip install -U tinydb"
 import re  # regex for later, native to python
-import random
+import random  # native to python
 from datetime import datetime, date # native to python
 
 # ---
@@ -18,7 +18,7 @@ GUILD = os.getenv('DISCORD_GUILD')
 
 # ---
 # Link DB(s)
-mentionDB = TinyDB('./zombiementionDB.json')
+mentionDB = TinyDB('./mentionPointsDB.json')
 
 # ---
 # Set up bot
@@ -76,7 +76,7 @@ async def on_message(message): # This is executed everytime a message is posted 
             response = mentionDB.all()
             await message.channel.send(response)
 
-        if command == "auth":
+        if command == "authorMentions":
             response = messageAuthorInDB
             await message.channel.send(response)
 
