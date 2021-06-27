@@ -102,6 +102,19 @@ async def headers(ctx):
     msg = (f'{ledgerIndexes}')
     await ctx.send(msg)
 
+@bot.command()
+async def write(ctx, targetAccount: discord.Member = None):
+    if targetAccount == None:
+        targetAccountId = targetAccountId = str(ctx.author.id)
+    else:
+        targetAccountId = str(targetAccount.id)
+    wks = await getWorkSheet()
+    table = []
+    for row in wks:
+        table.append(row)
+    tableHeaders = table[0]
+    table.pop(0)
+    ledgerIndexes = getLabelIndexes(tableHeaders)
 
 @bot.command()
 # async def balance(ctx):
@@ -117,13 +130,9 @@ async def balance(ctx, targetAccount: discord.Member = None):
     table=[]
     for row in wks:
         table.append(row)
-    # get the headers and remove them from the table
     tableHeaders = table[0]
     table.pop(0)
-    # put indexes on the labels we want
     ledgerIndexes = getLabelIndexes(tableHeaders)
-
-    
     #loop through table
     foundIt, action, date, fromAccount, toAccount, balance, description = False,'','','','','',''
     for row in table:
