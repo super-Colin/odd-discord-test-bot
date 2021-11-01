@@ -104,6 +104,7 @@ async def headers(ctx):
 
 @bot.command()
 async def write(ctx, targetAccount: discord.Member = None):
+    targetAccountId = ''
     if targetAccount == None:
         targetAccountId = targetAccountId = str(ctx.author.id)
     else:
@@ -117,13 +118,9 @@ async def write(ctx, targetAccount: discord.Member = None):
     ledgerIndexes = getLabelIndexes(tableHeaders)
 
 @bot.command()
-# async def balance(ctx):
 async def balance(ctx, targetAccount: discord.Member = None):
-    if targetAccount == None:
-        targetAccountId = targetAccountId = str(ctx.author.id)
-    else:
-        targetAccountId = str(targetAccount.id)
-    
+    targetAccountId = str(ctx.author.id) if targetAccount == None else str(targetAccount.id)
+
     wks = await getWorkSheet()
 
     # create a list containing all rows from the sheet
@@ -147,7 +144,7 @@ async def balance(ctx, targetAccount: discord.Member = None):
             description = row[ledgerIndexes['Description']]
 
     msg = (f"""
-The balance of {toAccount} is <:oddcoin:855612234558341161>{balance}<:oddcoin:855612234558341161>
+The balance of {toAccount} is {balance}
 From a {action} on {date} from {fromAccount}
 For: {description}
     """)
@@ -187,7 +184,7 @@ async def sheetDump(ctx):
 
 
 # ~~~~~~~~~~~~~ ETH Functions ~~~~~~~~~~~~~
-@bot.command()
+@bot.command() # Get the current ETH price
 async def eth(ctx):
     url = 'https://ethereumprice.org/'
     # html = urllib.request.urlopen(url)
